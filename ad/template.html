@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wove Brand Reel</title>
+<style>
+  @font-face {
+    font-family: "Schibsted Grotesk";
+    src: url("assets/schibsted-grotesk.woff2") format("woff2");
+    font-weight: 400 900;
+  }
+  :root {
+    --ink: #0E0E12;
+    --night: #05070A;
+    --cream: #F7F3F2;
+    --amber: #E39A62;
+    --rose: #D9768F;
+    --violet: #9873D9;
+    --blue: #6F87E2;
+    --navy: #1F3954;
+    --copper: #A3591A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #111; overflow: hidden; }
+  body { display: grid; place-items: center; font-family: "Schibsted Grotesk", system-ui, sans-serif; }
+
+  #viewport { position: relative; }
+  #stage {
+    position: absolute; left: 0; top: 0;
+    width: 1080px; height: 1920px; overflow: hidden;
+    transform-origin: 0 0; background: var(--night);
+  }
+  .scene { position: absolute; inset: 0; display: none; overflow: hidden; }
+  .scene.on { display: block; }
+  .bg { position: absolute; inset: 0; will-change: transform; }
+
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .grain {
+    position: absolute; inset: -50%; pointer-events: none; z-index: 50;
+    opacity: .09; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* fixed logo mark: never moves, only recolours per scene */
+  #mark {
+    position: absolute; left: 310px; top: 630px; width: 460px; height: 460px;
+    z-index: 40; pointer-events: none;
+  }
+
+  /* ---------- 1. glow (app icon colours) ---------- */
+  .s-glow .bg {
+    background:
+      radial-gradient(1200px 1100px at 0% 0%, var(--navy), transparent 60%),
+      radial-gradient(1300px 1300px at 100% 100%, var(--copper), #6B3A10 25%, transparent 65%),
+      var(--night);
+  }
+
+  /* ---------- 2. paper ---------- */
+  .s-paper .bg {
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.05), transparent 12%, transparent 88%, rgba(0,0,0,.06)),
+      linear-gradient(180deg, #FBF8F7, #EFE9E7);
+  }
+  .s-paper .fold { position: absolute; left: 0; right: 0; top: 1300px; height: 2px; background: rgba(0,0,0,.05); box-shadow: 0 2px 6px rgba(255,255,255,.8); }
+  .caption-row {
+    position: absolute; left: 330px; right: 150px; top: 1150px;
+    display: flex; align-items: center; gap: 28px; color: var(--ink);
+    font-size: 25px; line-height: 1.25; letter-spacing: -.01em;
+  }
+  .caption-row .rule { flex: 1; height: 2px; background: currentColor; position: relative; }
+  .caption-row .rule::after {
+    content: ""; position: absolute; right: -2px; top: -8px; width: 16px; height: 16px;
+    border-top: 2px solid currentColor; border-right: 2px solid currentColor; transform: rotate(45deg);
+  }
+
+  /* ---------- 3. home screen ---------- */
+  .s-home .bg {
+    background:
+      radial-gradient(900px 700px at 20% 15%, rgba(111,135,226,.55), transparent 70%),
+      radial-gradient(900px 900px at 85% 80%, rgba(227,154,98,.45), transparent 70%),
+      linear-gradient(160deg, #1a1b26, #0b0b10);
+  }
+  .s-home .wall-blur { position: absolute; inset: 0; backdrop-filter: blur(40px); background: rgba(10,10,14,.35); }
+  .icon {
+    position: absolute; width: 480px; height: 480px; border-radius: 108px; overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,.45);
+  }
+  .icon.wove {
+    left: 300px; top: 620px;
+    background:
+      radial-gradient(560px 560px at 0% 0%, var(--navy), rgba(5,7,10,0) 55%),
+      radial-gradient(620px 620px at 100% 100%, var(--copper), #6B3A10 22%, rgba(5,7,10,0) 62%),
+      var(--night);
+  }
+  .icon.chat { left: -260px; top: 620px; background: linear-gradient(180deg, #F4F7FB, #CFD9E6); }
+  .icon.chat::after { content: ""; position: absolute; right: 70px; top: 150px; width: 210px; height: 160px; border-radius: 80px; border: 26px solid #9FB0C8; }
+  .icon.gear { left: 860px; top: 620px; background: radial-gradient(circle, #8d9097 0 18%, #c9ccd2 19% 30%, #6f7279 31% 33%, #d7dae0 34% 46%, #7d8087 47% 49%, #bfc2c8 50%); }
+  .icon.dim { opacity: .55; filter: blur(2px); }
+
+  /* ---------- 4. front door ---------- */
+  .s-door .bg { background: linear-gradient(90deg, #2c4537, #3c5c4a 30%, #3f604d 55%, #2f4a3b); }
+  .panel {
+    position: absolute; border-radius: 6px;
+    background: linear-gradient(160deg, #436652, #375646);
+    box-shadow:
+      inset 0 0 0 16px #47705a,
+      inset 22px 22px 34px rgba(0,0,0,.38),
+      inset -14px -14px 26px rgba(255,255,255,.07),
+      0 0 0 3px rgba(0,0,0,.18);
+  }
+  .knob {
+    position: absolute; left: 960px; top: 990px; width: 150px; height: 150px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff3c4, #d9ad55 30%, #8a6424 70%, #4c3712);
+    box-shadow: 0 18px 30px rgba(0,0,0,.5);
+  }
+  .knob-plate { position: absolute; left: 1000px; top: 900px; width: 70px; height: 330px; border-radius: 35px; background: linear-gradient(90deg, #8a6424, #e7c477 45%, #9a7330); box-shadow: 0 10px 22px rgba(0,0,0,.45); }
+
+  /* ---------- 5. solar ---------- */
+  .s-solar .bg { background: linear-gradient(180deg, #F2C9A0 0%, #D9A0A8 18%, #4a5a8a 38%, #12203a 60%); }
+  .solar {
+    position: absolute; left: -700px; top: 260px; width: 2500px; height: 2600px;
+    transform: perspective(1500px) rotateX(36deg) rotateZ(-12deg);
+    transform-origin: 50% 20%;
+    background-color: #0f2342;
+    background-image:
+      linear-gradient(115deg, transparent 30%, rgba(255,220,200,.22) 44%, transparent 58%),
+      linear-gradient(90deg, #d9dfe7 0 14px, transparent 14px),
+      linear-gradient(0deg, #d9dfe7 0 14px, transparent 14px),
+      linear-gradient(90deg, rgba(210,220,235,.85) 0 5px, transparent 5px),
+      linear-gradient(0deg, rgba(210,220,235,.85) 0 5px, transparent 5px),
+      repeating-linear-gradient(90deg, transparent 0 46px, rgba(180,195,220,.25) 46px 48px),
+      linear-gradient(135deg, #1b3a6b, #0d1f3d);
+    background-size: 100% 100%, 840px 100%, 100% 1260px, 140px 140px, 140px 140px, 140px 140px, 100% 100%;
+    box-shadow: 0 0 0 20px #c9d1db;
+  }
+
+  /* ---------- 6/7. giant mark signage ---------- */
+  .s-sign-a .bg { background: linear-gradient(180deg, #ECE7E5, #D9D3D1); }
+  .s-sign-b .bg { background: radial-gradient(1400px 1400px at 70% 30%, #23232c, #0b0b0f 70%); }
+  .giant { position: absolute; width: 3600px; height: 3600px; left: -324px; top: -724px; }
+  .tiny-mark { position: absolute; left: 70px; top: 140px; width: 150px; height: 150px; }
+  .band-text {
+    position: absolute; left: 20px; top: 800px; width: 600px;
+    font-size: 66px; font-weight: 600; letter-spacing: -.03em; line-height: 1.02;
+    transform: rotate(-42deg); transform-origin: 0 0;
+  }
+  .corner-shadow { position: absolute; right: -120px; bottom: 300px; width: 420px; height: 700px; background: radial-gradient(closest-side, rgba(0,0,0,.25), transparent); transform: rotate(-30deg); }
+
+  /* ---------- 8. recording ---------- */
+  .s-rec .bg { background: radial-gradient(1200px 900px at 50% 45%, #1b1b24, var(--ink) 70%); }
+  .wave { position: absolute; left: 0; right: 0; top: 860px; height: 0; }
+  .wave i { position: absolute; width: 14px; border-radius: 7px; transform: translateY(-50%); }
+  .rec-pill {
+    position: absolute; left: 80px; top: 170px; display: flex; align-items: center; gap: 18px;
+    padding: 22px 34px; border-radius: 60px; background: rgba(255,255,255,.08);
+    color: #fff; font-size: 34px; font-weight: 600; letter-spacing: .02em;
+  }
+  .rec-dot { width: 22px; height: 22px; border-radius: 50%; background: #FF4A4A; box-shadow: 0 0 24px #FF4A4A; }
+  .rec-meta { position: absolute; left: 86px; top: 290px; color: rgba(255,255,255,.55); font-size: 28px; }
+  .transcript {
+    position: absolute; left: 80px; right: 80px; top: 1180px; color: rgba(255,255,255,.88);
+    font-size: 40px; line-height: 1.3; letter-spacing: -.01em; font-weight: 500;
+  }
+  .transcript small { display: block; margin-top: 26px; font-size: 26px; color: var(--amber); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+  /* ---------- 9. agreement ---------- */
+  .s-deal .bg { background: linear-gradient(160deg, #C9B8A6, #A8927C); }
+  .sheet {
+    position: absolute; left: 90px; top: 140px; width: 900px; height: 1640px;
+    background: #FDFCFA; border-radius: 6px; transform: rotate(-3deg);
+    box-shadow: 0 50px 90px rgba(60,40,20,.35), 0 4px 10px rgba(0,0,0,.12);
+    padding: 90px 80px; color: var(--ink);
+  }
+  .sheet h4 { font-size: 40px; font-weight: 700; letter-spacing: -.02em; }
+  .sheet .sub { font-size: 24px; color: #8b8686; margin-top: 10px; }
+  .lines { margin-top: 50px; display: grid; gap: 22px; }
+  .lines span { display: block; height: 14px; border-radius: 7px; background: #E6E1DF; }
+  .sig { position: absolute; left: 80px; right: 80px; bottom: 210px; }
+  .sig svg { width: 420px; height: 130px; }
+  .sig .line { height: 2px; background: #bbb; margin-top: -10px; }
+  .sig .lbl { font-size: 22px; color: #8b8686; margin-top: 12px; }
+  .stamp {
+    position: absolute; right: 70px; bottom: 180px; width: 250px; height: 250px; border-radius: 50%;
+    border: 6px solid var(--rose); color: var(--rose); transform: rotate(-14deg);
+    display: grid; place-items: center; text-align: center; font-weight: 800; font-size: 30px; letter-spacing: .08em; line-height: 1.15;
+  }
+  .stamp::before { content: ""; position: absolute; inset: 12px; border-radius: 50%; border: 2px solid var(--rose); }
+  .risk {
+    position: absolute; left: 80px; bottom: 90px; padding: 12px 26px; border-radius: 40px;
+    background: #E7F4EC; color: #1E7A46; font-size: 24px; font-weight: 700; letter-spacing: .06em;
+  }
+
+  /* ---------- 10. door hanger ---------- */
+  .s-hanger .bg { background: linear-gradient(90deg, #1A2340, #26315a 50%, #1A2340); }
+  .s-hanger .groove { position: absolute; top: 0; bottom: 0; width: 6px; background: rgba(0,0,0,.25); box-shadow: 3px 0 0 rgba(255,255,255,.05); }
+  .hanger {
+    position: absolute; left: 240px; top: 230px; width: 600px; height: 1560px; border-radius: 30px;
+    background: linear-gradient(180deg, #FBF7F5, #EEE8E5); transform: rotate(2deg); transform-origin: 50% 0;
+    box-shadow: 0 50px 90px rgba(0,0,0,.5);
+    color: var(--ink); text-align: center;
+  }
+  .hanger .hole { position: absolute; left: 175px; top: 60px; width: 250px; height: 250px; border-radius: 50%; background: #1f2848; box-shadow: inset 0 10px 20px rgba(0,0,0,.6); }
+  .hanger .slit { position: absolute; left: 290px; top: 0; width: 20px; height: 90px; background: #1f2848; }
+  .hanger h3 { position: absolute; left: 0; right: 0; top: 920px; font-size: 76px; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+  .hanger p { position: absolute; left: 60px; right: 60px; top: 1030px; font-size: 30px; line-height: 1.35; color: #5c5858; }
+  .hanger .foot { position: absolute; left: 0; right: 0; bottom: 70px; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+  .hanger .stripe { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; border-radius: 0 0 30px 30px; background: linear-gradient(90deg, var(--amber), var(--rose), var(--violet), var(--blue)); }
+  .knob2 { position: absolute; left: 440px; top: 300px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3c4, #d9ad55 30%, #8a6424 70%, #4c3712); box-shadow: 0 20px 30px rgba(0,0,0,.5); }
+
+  /* ---------- 11. badge ---------- */
+  .s-badge .bg {
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 3px, transparent 3px 9px),
+      repeating-linear-gradient(-45deg, rgba(0,0,0,.18) 0 3px, transparent 3px 9px),
+      radial-gradient(1200px 1200px at 50% 30%, #3a3c44, #1c1d22 75%);
+  }
+  .strap { position: absolute; top: -40px; width: 90px; height: 560px; background: linear-gradient(180deg, var(--violet), var(--rose) 60%, var(--amber)); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .strap.l { left: 330px; transform: rotate(-16deg); transform-origin: 50% 100%; }
+  .strap.r { left: 660px; transform: rotate(16deg); transform-origin: 50% 100%; }
+  .clip { position: absolute; left: 490px; top: 430px; width: 100px; height: 110px; border-radius: 14px; background: linear-gradient(90deg, #8f949c, #e6e9ee 45%, #7b8088); box-shadow: 0 10px 18px rgba(0,0,0,.4); }
+  .badge {
+    position: absolute; left: 220px; top: 520px; width: 640px; height: 1000px; border-radius: 40px;
+    background: #FBF8F7; box-shadow: 0 50px 90px rgba(0,0,0,.55); color: var(--ink); text-align: center; overflow: hidden;
+  }
+  .badge .slot { position: absolute; left: 250px; top: 40px; width: 140px; height: 30px; border-radius: 15px; background: #2b2c33; }
+  .badge .name { position: absolute; left: 0; right: 0; top: 620px; font-size: 66px; font-weight: 700; letter-spacing: -.03em; }
+  .badge .role { position: absolute; left: 0; right: 0; top: 710px; font-size: 30px; color: #6b6767; }
+  .badge .chip { position: absolute; left: 50%; top: 790px; transform: translateX(-50%); padding: 12px 28px; border-radius: 30px; background: var(--ink); color: var(--cream); font-size: 24px; font-weight: 600; letter-spacing: .06em; white-space: nowrap; }
+  .badge .band { position: absolute; left: 0; right: 0; bottom: 0; height: 110px; background: linear-gradient(90deg, var(--amber), var(--rose), var(--violet), var(--blue)); }
+
+  /* ---------- 12. wordmark pill ---------- */
+  .s-pill .bg {
+    background:
+      linear-gradient(180deg, rgba(152,115,217,0) 40%, rgba(152,115,217,.55)),
+      repeating-radial-gradient(circle at 115% -15%, #F0B4C2 0 18px, #D9768F 18px 36px);
+  }
+  .pill {
+    position: absolute; left: 150px; top: 590px; width: 1600px; height: 540px; border-radius: 270px;
+    background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.4));
+    backdrop-filter: blur(18px);
+    box-shadow: inset 0 3px 0 rgba(255,255,255,.9), inset 0 -20px 40px rgba(152,115,217,.25), 0 40px 90px rgba(80,20,60,.35);
+  }
+  .pill .word { position: absolute; left: 600px; top: 50%; transform: translateY(-54%); font-size: 330px; font-weight: 650; letter-spacing: -.045em; color: var(--ink); line-height: 1; }
+
+  /* ---------- 13. map ---------- */
+  .s-map .bg { background: #0B0F17; }
+  .s-map svg.map { position: absolute; inset: 0; width: 1080px; height: 1920px; }
+  .pin-label {
+    position: absolute; padding: 14px 22px; border-radius: 16px; background: rgba(20,24,34,.92);
+    border: 1px solid rgba(255,255,255,.12); color: #fff; font-size: 26px; font-weight: 600; white-space: nowrap;
+  }
+  .pin-label b { color: #7BE0A5; font-weight: 700; }
+  .pin-label em { font-style: normal; color: var(--amber); }
+
+  /* ---------- 14. end card ---------- */
+  .s-end .bg { background: radial-gradient(1400px 1200px at 50% 40%, #FFFFFF, var(--cream) 60%, #EDE6E3); }
+  .end-word { position: absolute; left: 0; right: 0; top: 230px; text-align: center; font-size: 64px; font-weight: 650; letter-spacing: -.03em; color: var(--ink); }
+  .end-head {
+    position: absolute; left: 80px; right: 80px; top: 1150px; text-align: center; color: var(--ink);
+    font-size: 84px; font-weight: 650; letter-spacing: -.04em; line-height: 1.04;
+  }
+  .end-head span { display: block; }
+  .end-head .grad { background: linear-gradient(90deg, var(--amber), var(--rose), var(--violet), var(--blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .end-cta {
+    position: absolute; left: 50%; top: 1420px; transform: translateX(-50%);
+    padding: 34px 60px; border-radius: 80px; background: var(--ink); color: var(--cream);
+    font-size: 40px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+  }
+  .end-url { position: absolute; left: 0; right: 0; top: 1570px; text-align: center; font-size: 30px; color: #6b6767; letter-spacing: .04em; }
+
+  #hint { position: fixed; bottom: 12px; left: 0; right: 0; text-align: center; color: #888; font: 13px system-ui, sans-serif; }
+  .export #hint { display: none; }
+</style>
+</head>
+<body>
+<div id="viewport">
+<div id="stage">
+
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <path id="mk" d="__MARK_D__"/>
+      <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FFF0BE"/><stop offset=".35" stop-color="#D9AD55"/>
+        <stop offset=".6" stop-color="#F3D48A"/><stop offset="1" stop-color="#8A6424"/>
+      </linearGradient>
+      <linearGradient id="dawnA" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#E39A62"/><stop offset=".55" stop-color="#E08A6E"/><stop offset="1" stop-color="#D9768F"/>
+      </linearGradient>
+      <linearGradient id="dawnB" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#D9768F"/><stop offset=".45" stop-color="#9873D9"/><stop offset="1" stop-color="#6F87E2"/>
+      </linearGradient>
+      <linearGradient id="dawnFull" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#E39A62"/><stop offset=".33" stop-color="#D9768F"/>
+        <stop offset=".66" stop-color="#9873D9"/><stop offset="1" stop-color="#6F87E2"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- 1 -->
+  <section class="scene s-glow" data-dur="0.75" data-mark="#FFFFFF"><div class="bg"></div></section>
+
+  <!-- 2 -->
+  <section class="scene s-paper" data-dur="0.5" data-mark="#0E0E12">
+    <div class="bg"><div class="fold"></div>
+      <div class="caption-row"><div>Every door coached.<br>Every deal verified.</div><div class="rule"></div><div>gowove.com</div></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="scene s-home" data-dur="0.5" data-mark="#FFFFFF">
+    <div class="bg">
+      <div class="icon chat dim" style="top:40px"></div><div class="icon dim" style="left:300px;top:40px;background:linear-gradient(180deg,#FFD66B,#F5A623)"></div><div class="icon gear dim" style="top:40px"></div>
+      <div class="icon chat"></div><div class="icon wove"></div><div class="icon gear"></div>
+      <div class="icon dim" style="left:-260px;top:1200px;background:linear-gradient(180deg,#7EE0A1,#2FB866)"></div><div class="icon chat dim" style="left:300px;top:1200px"></div><div class="icon dim" style="left:860px;top:1200px;background:linear-gradient(180deg,#8FB8FF,#3D74F0)"></div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="scene s-door" data-dur="0.5" data-mark="url(#brass)" data-shadow="drop-shadow(0 8px 6px rgba(0,0,0,.55))">
+    <div class="bg">
+      <div class="panel" style="left:90px;top:-60px;width:400px;height:720px"></div>
+      <div class="panel" style="left:590px;top:-60px;width:400px;height:720px"></div>
+      <div class="panel" style="left:90px;top:1060px;width:400px;height:960px"></div>
+      <div class="panel" style="left:590px;top:1060px;width:400px;height:960px"></div>
+      <div class="knob-plate"></div><div class="knob"></div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="scene s-solar" data-dur="0.5" data-mark="#FFFFFF" data-shadow="drop-shadow(0 10px 24px rgba(0,0,0,.45))">
+    <div class="bg"><div class="solar"></div></div>
+  </section>
+
+  <!-- 6 -->
+  <section class="scene s-sign-a" data-dur="0.5" data-mark="#FFFFFF">
+    <div class="bg">
+      <svg class="giant" viewBox="0 0 200 200"><use href="#mk" fill="url(#dawnA)"/></svg>
+      <svg class="tiny-mark" viewBox="0 0 200 200"><use href="#mk" fill="#0E0E12"/></svg>
+      <div class="band-text" style="color:var(--ink)">every door,<br>on the record</div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="scene s-sign-b" data-dur="0.5" data-mark="#0E0E12">
+    <div class="bg">
+      <svg class="giant" viewBox="0 0 200 200"><use href="#mk" fill="url(#dawnB)"/></svg>
+      <svg class="tiny-mark" viewBox="0 0 200 200"><use href="#mk" fill="#F7F3F2"/></svg>
+      <div class="band-text" style="color:var(--cream)">every deal,<br>verified</div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="scene s-rec" data-dur="0.5" data-mark="#FFFFFF">
+    <div class="bg">
+      <div class="rec-pill"><span class="rec-dot"></span><span class="mono">REC&nbsp;&nbsp;02:14</span></div>
+      <div class="rec-meta mono">214 Maple St · Door 37</div>
+      <div class="wave" id="wave"></div>
+      <div class="transcript">“So the 25-year warranty covers the panels <em style="font-style:normal;color:rgba(255,255,255,.45)">and</em> the labor.”<small>✓ Close checklist · 4 of 5</small></div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="scene s-deal" data-dur="0.5" data-mark="#0E0E12">
+    <div class="bg">
+      <div class="sheet">
+        <h4>Residential Solar Agreement</h4>
+        <div class="sub mono">DEAL #20418 · 214 MAPLE ST</div>
+        <div class="lines" id="lines-top"></div>
+        <div class="lines" id="lines-bot" style="margin-top:420px"></div>
+        <div class="sig">
+          <svg viewBox="0 0 420 130"><path d="M10 95 C40 20 60 20 70 80 S100 120 120 60 S150 10 160 70 S200 110 230 60 S270 40 290 75 S340 90 410 50" fill="none" stroke="#1d2a5a" stroke-width="5" stroke-linecap="round"/></svg>
+          <div class="line"></div><div class="lbl">Homeowner signature</div>
+        </div>
+        <div class="stamp">HOME-<br>OWNER<br>CONFIRMED</div>
+        <div class="risk mono">RISK · LOW</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="scene s-hanger" data-dur="0.5" data-mark="#0E0E12">
+    <div class="bg">
+      <div class="groove" style="left:120px"></div><div class="groove" style="left:960px"></div>
+      <div class="hanger">
+        <div class="hole"></div><div class="slit"></div>
+        <h3>We stopped by.</h3>
+        <p>Every conversation coached.<br>Every agreement confirmed.</p>
+        <div class="foot">gowove.com</div>
+        <div class="stripe"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="scene s-badge" data-dur="0.5" data-mark="#0E0E12">
+    <div class="bg">
+      <div class="strap l"></div><div class="strap r"></div>
+      <div class="badge">
+        <div class="slot"></div>
+        <div class="name">Jordan Reyes</div>
+        <div class="role">Field Rep · Team Sunrise</div>
+        <div class="chip mono">● LIVE COACHING ON</div>
+        <div class="band"></div>
+      </div>
+      <div class="clip"></div>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="scene s-pill" data-dur="0.5" data-mark="#0E0E12">
+    <div class="bg"><div class="pill"><div class="word">wove</div></div></div>
+  </section>
+
+  <!-- 13 -->
+  <section class="scene s-map" data-dur="0.5" data-mark="#FFFFFF">
+    <div class="bg">
+      <svg class="map" id="map" viewBox="0 0 1080 1920"></svg>
+      <div class="pin-label" style="left:90px;top:330px"><b>✓</b> Door 41 · Verified</div>
+      <div class="pin-label" style="left:560px;top:1290px"><em>●</em> Door 44 · Coaching live</div>
+      <div class="pin-label" style="left:120px;top:1560px"><b>✓</b> Door 38 · Verified</div>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="scene s-end" data-dur="2.7" data-mark="#0E0E12" data-still="1">
+    <div class="bg">
+      <div class="end-word" id="e0">wove</div>
+      <div class="end-head"><span id="e1">Every door coached.</span><span id="e2" class="grad">Every deal verified.</span></div>
+      <div class="end-cta" id="e3">Book a demo →</div>
+      <div class="end-url mono" id="e4">gowove.com</div>
+    </div>
+  </section>
+
+  <svg id="mark" viewBox="0 0 200 200"><use id="markUse" href="#mk"/></svg>
+  <div class="grain"></div>
+</div>
+</div>
+<div id="hint">Click to pause · Wove brand reel 9:16</div>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const scenes = [...document.querySelectorAll('.scene')];
+  const mark = document.getElementById('mark');
+  const markUse = document.getElementById('markUse');
+
+  // timeline
+  let acc = 0;
+  const tl = scenes.map(el => { const d = +el.dataset.dur; const s = { el, start: acc, dur: d, bg: el.querySelector('.bg') }; acc += d; return s; });
+  const TOTAL = acc;
+  window.AD_DURATION = TOTAL;
+
+  // deterministic pseudo-random
+  const rnd = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+  // waveform bars
+  const wave = document.getElementById('wave');
+  const BARS = 46, bars = [];
+  for (let i = 0; i < BARS; i++) {
+    const b = document.createElement('i');
+    const x = 30 + i * ((1080 - 60) / (BARS - 1)) - 7;
+    b.style.left = x + 'px';
+    const f = i / (BARS - 1);
+    b.style.background = `linear-gradient(180deg, hsl(${25 + f * 210} 70% 68%), hsl(${10 + f * 210} 60% 58%))`;
+    wave.appendChild(b); bars.push({ b, x: x + 7, base: 0.35 + rnd(i) * 0.65 });
+  }
+
+  // agreement text lines
+  const fillLines = (id, n, seed) => {
+    const el = document.getElementById(id);
+    for (let i = 0; i < n; i++) { const s = document.createElement('span'); s.style.width = (62 + rnd(i + seed) * 38) + '%'; el.appendChild(s); }
+  };
+  fillLines('lines-top', 6, 3); fillLines('lines-bot', 7, 40);
+
+  // neighbourhood map
+  (() => {
+    const svg = document.getElementById('map');
+    const ns = 'http://www.w3.org/2000/svg';
+    const add = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.appendChild(e); return e; };
+    const g = add('g', { transform: 'rotate(-14 540 960)' });
+    const gadd = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); g.appendChild(e); return e; };
+    // blocks of houses
+    for (let bx = -400; bx < 1500; bx += 330) for (let by = -400; by < 2400; by += 280) {
+      for (let h = 0; h < 4; h++) {
+        gadd('rect', { x: bx + 30 + h * 64, y: by + 40, width: 46, height: 52, rx: 6, fill: '#161C29' });
+        gadd('rect', { x: bx + 30 + h * 64, y: by + 150, width: 46, height: 52, rx: 6, fill: '#161C29' });
+      }
+    }
+    for (let x = -400; x < 1500; x += 330) gadd('rect', { x: x - 14, y: -500, width: 28, height: 3000, fill: '#1F2636' });
+    for (let y = -400; y < 2400; y += 280) gadd('rect', { x: -500, y: y - 10, width: 2200, height: 20, fill: '#1A2030' });
+    // route
+    gadd('path', { d: 'M -100 380 L 260 380 L 260 660 L 590 660 L 590 1220 L 920 1220 L 920 1500 L 1300 1500', fill: 'none', stroke: 'url(#dawnFull)', 'stroke-width': 12, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    const pins = [[260, 380, 1], [260, 660, 1], [590, 660, 1], [590, 1220, 0], [920, 1220, 2], [920, 1500, 2], [120, 1500, 1]];
+    pins.forEach(([x, y, k]) => {
+      const c = k === 1 ? '#7BE0A5' : k === 0 ? '#E39A62' : '#3A4256';
+      gadd('circle', { cx: x, cy: y, r: 40, fill: c, opacity: .18 });
+      gadd('circle', { cx: x, cy: y, r: 16, fill: c });
+    });
+  })();
+
+  const ease = (x) => 1 - Math.pow(1 - x, 3);
+  const clamp = (x) => Math.max(0, Math.min(1, x));
+
+  let current = -1;
+  function renderAt(t) {
+    t = ((t % TOTAL) + TOTAL) % TOTAL;
+    let idx = tl.findIndex(s => t >= s.start && t < s.start + s.dur);
+    if (idx < 0) idx = tl.length - 1;
+    const s = tl[idx], p = (t - s.start) / s.dur;
+    if (idx !== current) {
+      tl.forEach((x, i) => x.el.classList.toggle('on', i === idx));
+      markUse.setAttribute('fill', s.el.dataset.mark || '#fff');
+      mark.style.filter = s.el.dataset.shadow || 'none';
+      current = idx;
+    }
+    // slow handheld push-in on the background, mark stays locked
+    if (!s.el.dataset.still) {
+      const sc = 1.03 + 0.06 * p;
+      const dx = (rnd(idx) - .5) * 30 * p, dy = (rnd(idx + 9) - .5) * 30 * p;
+      s.bg.style.transform = `translate(${dx}px, ${dy}px) scale(${sc})`;
+    }
+    if (s.el.classList.contains('s-rec')) {
+      bars.forEach(({ b, x, base }, i) => {
+        const near = Math.abs(x - 540) < 260 ? 0.25 : 1;
+        const h = 40 + base * 520 * near * (0.55 + 0.45 * Math.sin(t * 22 + i * 0.9));
+        b.style.height = h + 'px'; b.style.opacity = near < 1 ? .35 : 1;
+      });
+    }
+    if (s.el.classList.contains('s-end')) {
+      const local = t - s.start;
+      ['e0', 'e1', 'e2', 'e3', 'e4'].forEach((id, i) => {
+        const k = ease(clamp((local - 0.15 - i * 0.12) / 0.45));
+        const el = document.getElementById(id);
+        el.style.opacity = k;
+        const base = id === 'e3' ? 'translateX(-50%) ' : '';
+        el.style.transform = base + `translateY(${(1 - k) * 40}px)`;
+      });
+    }
+  }
+  window.renderAt = renderAt;
+
+  // fit stage to window
+  const exporting = new URLSearchParams(location.search).has('export');
+  const vp = document.getElementById('viewport');
+  function fit() {
+    const k = exporting ? 1 : Math.min(innerWidth / 1080, (innerHeight - (exporting ? 0 : 36)) / 1920);
+    vp.style.width = 1080 * k + 'px'; vp.style.height = 1920 * k + 'px';
+    stage.style.transform = `scale(${k})`;
+  }
+  if (exporting) document.documentElement.classList.add('export');
+  addEventListener('resize', fit); fit();
+
+  if (!exporting) {
+    let paused = false, t0 = performance.now(), held = 0;
+    addEventListener('click', () => { paused = !paused; if (!paused) t0 = performance.now() - held * 1000; });
+    const loop = (now) => { if (!paused) { held = (now - t0) / 1000; renderAt(held); } requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+  } else {
+    renderAt(0);
+  }
+})();
+</script>
+</body>
+</html>
