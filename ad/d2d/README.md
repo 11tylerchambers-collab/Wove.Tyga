@@ -22,13 +22,14 @@ python3 encode.py     # -> out/wove-d2d.mp4
 
 End card: the last photo holds while the type is printed into the door with
 the same ink treatment as the logo.
-- "wove" is Fraunces italic with its SOFT and WONK axes maxed: soft, rounded,
-  flowing letters that echo the logo's woven ribbon and its round stroke ends.
-  Letters rise from behind a hard baseline mask, staggered, with motion blur.
-- The slogan ("Every door coached. Every deal verified.", gowove.com's headline)
-  is Bricolage Grotesque 600; its words punch in one every 0.1s, the reel's own
-  cut rhythm.
-- `out/font-options.png` shows the other type directions that were considered.
+- Type is Rubik Black Italic: the heaviest weight for punch, a forward slant
+  that follows the logo's rising diagonal, and softly rounded corners that
+  echo the ribbon's round stroke ends.
+- "wove" letters rise from behind a hard baseline mask, staggered, with
+  motion blur. The slogan ("Every door coached. Every deal verified.",
+  gowove.com's headline) punches in a word every 0.1s, the reel's own cut
+  rhythm.
+- `out/font-options.png` shows the heavy type directions that were compared.
 Fonts are from Google Fonts (SIL Open Font License), in `../assets/fonts/`.
 
 Order, crop (`focus`, `zoom`) and logo treatment per shot live in `SHOTS` in

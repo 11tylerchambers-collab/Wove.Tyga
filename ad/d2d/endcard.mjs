@@ -2,10 +2,9 @@
 // (build/text_XXX.png); compose.py prints each onto the held last photo with
 // the same ink treatment as the logo.
 //
-// Type:
-//   "wove"  Fraunces italic, SOFT 100 / WONK 1: soft, rounded, flowing letters
-//           that echo the logo's woven ribbon and its round stroke ends.
-//   slogan  Bricolage Grotesque 600: a characterful but clean grotesk.
+// Type: Rubik Black Italic. The heaviest weight for punch; the forward slant
+// follows the logo's rising diagonal and the softly rounded corners echo the
+// ribbon's round stroke ends.
 // Reveal (punchy, no fades):
 //   "wove"  letters rise from behind a hard baseline mask, staggered, expo-out.
 //   slogan  words punch in one by one every 0.1s, the reel's own cut rhythm.
@@ -23,16 +22,15 @@ export const FPS = 30, SECONDS = 2.5;
 const W = 1080, H = 1920;
 const cy = 0.449 * H;   // logo centre, same as layers.mjs
 const MAX_LINE = 440;   // keep the slogan on the door panel
+const MAX_WORD = 390;   // keep "wove" clear of the door handle
 
 const html = `<!doctype html><html><head><style>
-@font-face{font-family:Fra;src:url(file://${fonts}/Fraunces-italic.woff2);font-style:italic;font-weight:100 900}
-@font-face{font-family:Bri;src:url(file://${fonts}/BricolageGrotesque-normal.woff2);font-weight:200 800}
+@font-face{font-family:Rub;src:url(file://${fonts}/Rubik-italic.woff2);font-style:italic;font-weight:300 900}
 *{margin:0;padding:0}
 body{width:${W}px;height:${H}px;overflow:hidden;background:transparent;color:#fff}
 .row{position:absolute;left:0;right:0;text-align:center;white-space:nowrap}
-#word{top:${cy + 96}px;font:italic 600 168px/1.12 Fra;letter-spacing:-.03em;
-  font-variation-settings:'SOFT' 100,'WONK' 1,'opsz' 144}
-#line{top:${cy + 352}px;font:600 50px/1.18 Bri;letter-spacing:-.03em;font-variation-settings:'opsz' 48}
+#word{top:${cy + 100}px;font:italic 900 200px/1.1 Rub;letter-spacing:-.04em}
+#line{top:${cy + 350}px;font:italic 800 54px/1.18 Rub;letter-spacing:-.02em}
 /* each unit is clipped only at its bottom edge, so it rises out of a hard line */
 .m{display:inline-block;clip-path:inset(-40% -40% 0 -40%);padding-bottom:.14em;vertical-align:top}
 .m>span{display:inline-block;will-change:transform}
@@ -49,8 +47,14 @@ body{width:${W}px;height:${H}px;overflow:hidden;background:transparent;color:#ff
     const widest = () => Math.max(...[...line.childNodes].reduce((rows, n) => {
       if (n.nodeName === 'BR') rows.push([]); else rows[rows.length - 1].push(n); return rows; }, [[]])
       .map(r => r.reduce((w, n) => w + (n.getBoundingClientRect ? n.getBoundingClientRect().width : 0), 0)));
-    let size = 50;
+    let size = 54;
     while (widest() > max && size > 30) line.style.fontSize = (--size) + 'px';
+  };
+  window.fitWord = (max) => {
+    const word = document.getElementById('word'), r = document.createRange();
+    r.selectNodeContents(word);
+    let size = 200;
+    while (r.getBoundingClientRect().width > max && size > 60) word.style.fontSize = (--size) + 'px';
   };
   window.at = t => {
     letters.forEach((el, i) => {            // "wove": staggered rise, 0.45s each
@@ -74,6 +78,7 @@ const p = await browser.newPage({ viewport: { width: W, height: H } });
 await p.goto('file://' + tmp);
 await p.evaluate(() => document.fonts.ready);
 await p.evaluate(m => window.fit(m), MAX_LINE);
+await p.evaluate(m => window.fitWord(m), MAX_WORD);
 const n = Math.round(FPS * SECONDS);
 for (let f = 0; f < n; f++) {
   await p.evaluate(t => window.at(t), f / FPS);
