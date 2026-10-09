@@ -7,7 +7,7 @@ ink (white or Wove ink) is picked from the local brightness so it always reads.
 "flat" shots (skies, aerials) get a clean overlay like the reference.
 
 It also builds the end card: the reel holds on the last photo while "wove" and
-the slogan fade in, printed into the door exactly like the logo.
+the slogan are revealed, printed into the door exactly like the logo.
 
 Run layers.mjs and endcard.mjs first.  python3 compose.py [--sheet]
 """
@@ -121,20 +121,18 @@ def mask(name):
     return np.asarray(Image.open(BUILD / f"{name}.png").convert("RGBA"), dtype=np.float32)[..., 3] / 255
 
 
-def end_card(alpha, fps=30, seconds=2.5):
-    """Hold the last shot; fade "wove" then the slogan in from nothing, same ink as the logo."""
+def end_card(alpha):
+    """Hold the last shot and print each frame of the type reveal (endcard.mjs) into it like the logo."""
     last = SHOTS[-1]
     base = crop(last)
-    word, line = mask("text_word"), mask("text_line")
     for f in BUILD.glob("end_*.png"):
         f.unlink()
-    ease = lambda x: (lambda c: c * c * (3 - 2 * c))(min(max(x, 0.0), 1.0))
-    for f in range(round(fps * seconds)):
-        t = f / fps
-        a = np.maximum(alpha, np.maximum(word * ease((t - .15) / .7), line * ease((t - .55) / .7)))
+    frames = sorted(BUILD.glob("text_[0-9][0-9][0-9].png"))
+    for f, src in enumerate(frames):
+        a = np.maximum(alpha, mask(src.stem))
         img = put_mark(base, a, last.get("mode", "flat"), last.get("ink", "white"))
         Image.fromarray(np.clip(img * 255 + .5, 0, 255).astype(np.uint8)).save(BUILD / f"end_{f:03d}.png")
-    print(f"end card: {round(fps * seconds)} frames -> build/")
+    print(f"end card: {len(frames)} frames -> build/")
 
 
 def main():

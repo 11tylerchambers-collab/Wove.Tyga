@@ -15,15 +15,21 @@ Matched to the reference ad:
 ```
 ./fetch-photos.sh     # downloads the 42 Pexels photos into photos/
 node layers.mjs       # logo mask -> build/mark.png
-node endcard.mjs      # end-card type masks -> build/text_*.png
+node endcard.mjs      # end-card type reveal, one mask per frame -> build/text_XXX.png
 python3 compose.py    # photos + logo -> build/shot_XX.png, end card -> build/end_XXX.png  (--sheet)
 python3 encode.py     # -> out/wove-d2d.mp4
 ```
 
-End-card type follows gowove.com (Schibsted Grotesk): "wove" is set like the
-site's wordmark (weight 650, tracking -0.0366em) and the slogan like the site's
-hero headline (weight 700, tracking -0.045em, line-height 1). Both are printed
-into the door with the same ink treatment as the logo.
+End card: the last photo holds while the type is printed into the door with
+the same ink treatment as the logo.
+- "wove" is Fraunces italic with its SOFT and WONK axes maxed: soft, rounded,
+  flowing letters that echo the logo's woven ribbon and its round stroke ends.
+  Letters rise from behind a hard baseline mask, staggered, with motion blur.
+- The slogan ("Every door coached. Every deal verified.", gowove.com's headline)
+  is Bricolage Grotesque 600; its words punch in one every 0.1s, the reel's own
+  cut rhythm.
+- `out/font-options.png` shows the other type directions that were considered.
+Fonts are from Google Fonts (SIL Open Font License), in `../assets/fonts/`.
 
 Order, crop (`focus`, `zoom`) and logo treatment per shot live in `SHOTS` in
 `compose.py`.
