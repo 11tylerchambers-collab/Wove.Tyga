@@ -3,7 +3,7 @@
 Measured from the reference (60fps screen recording, cuts land on even frames,
 so the source ad is 30fps): 30 cuts of 3 frames (0.1s), then a slowdown of
 5,6,6,6,8,9,9,10,12,12,17,20 frames. 42 segments, each a different photo,
-7.0s total, ending on the longest hold so it loops cleanly.
+7.0s total. Then the end card (endcard.mjs: "wove" + slogan) plays for 2.5s.
 """
 import os
 import subprocess
@@ -24,6 +24,9 @@ for i, frames in enumerate(SEGMENTS):
     for _ in range(frames):
         os.symlink(src, seq / f"f_{n:04d}.png")
         n += 1
+for src in sorted((HERE / "build").glob("end_*.png")):
+    os.symlink(src, seq / f"f_{n:04d}.png")
+    n += 1
 
 out = HERE / "out"
 out.mkdir(exist_ok=True)
