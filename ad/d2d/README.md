@@ -15,10 +15,15 @@ Matched to the reference ad:
 ```
 ./fetch-photos.sh     # downloads the 42 Pexels photos into photos/
 node layers.mjs       # logo mask -> build/mark.png
-python3 compose.py    # photos + logo -> build/shot_XX.png  (--sheet for a contact sheet)
-node endcard.mjs      # hold on last photo, fade in "wove" + slogan -> build/end_XXX.png
+node endcard.mjs      # end-card type masks -> build/text_*.png
+python3 compose.py    # photos + logo -> build/shot_XX.png, end card -> build/end_XXX.png  (--sheet)
 python3 encode.py     # -> out/wove-d2d.mp4
 ```
+
+End-card type follows gowove.com (Schibsted Grotesk): "wove" is set like the
+site's wordmark (weight 650, tracking -0.0366em) and the slogan like the site's
+hero headline (weight 700, tracking -0.045em, line-height 1). Both are printed
+into the door with the same ink treatment as the logo.
 
 Order, crop (`focus`, `zoom`) and logo treatment per shot live in `SHOTS` in
 `compose.py`.
