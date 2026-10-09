@@ -1,8 +1,8 @@
 # Wove door-to-door reel
 
 9.5s, 1080×1920, 30fps reel for door-to-door sales teams: a 7.0s photo
-sequence, then a 2.5s end card with "wove" and the slogan "Every door coached.
-Every deal verified." (the headline on gowove.com). 42 different real
+sequence, then it holds on the last photo for 2.5s while "wove" and the slogan "Every door coached.
+Every deal verified." (the headline on gowove.com) fade in. 42 different real
 photos (doors, doorbells, houses, solar, San Diego, Utah), mostly blue to match
 Wove's palette with green, purple and warm accents. Nothing repeats.
 
@@ -16,7 +16,7 @@ Matched to the reference ad:
 ./fetch-photos.sh     # downloads the 42 Pexels photos into photos/
 node layers.mjs       # logo mask -> build/mark.png
 python3 compose.py    # photos + logo -> build/shot_XX.png  (--sheet for a contact sheet)
-node endcard.mjs      # "wove" + slogan end card -> build/end_XXX.png
+node endcard.mjs      # hold on last photo, fade in "wove" + slogan -> build/end_XXX.png
 python3 encode.py     # -> out/wove-d2d.mp4
 ```
 
